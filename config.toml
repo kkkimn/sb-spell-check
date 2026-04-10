@@ -3,4 +3,4 @@ enableStaticServing = true
 headless = true
 
 [browser]
-gatherUsageStats = false
+gatherUsageStats = true
