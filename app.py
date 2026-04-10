@@ -188,52 +188,37 @@ if uploaded_file is not None:
         if not os.path.exists(html_source):
             st.error(f"'{html_source}' 파일을 찾을 수 없습니다. app.py와 같은 폴더에 두세요.")
         else:
-            # HTML 파일 내용을 읽어서 JavaScript blob URL로 새 탭에 오픈
-            # 이 방식은 로컬/배포(Streamlit Cloud, GitHub 등) 환경 모두에서 동일하게 작동함
-            # (사용자 브라우저 측에서 직접 blob을 생성해 새 탭을 열기 때문)
-            with open(html_source, "r", encoding="utf-8") as f:
-                html_content = f.read()
+            # Streamlit 공식 static serving을 이용해서 HTML 파일을 /app/static/ 경로로 노출
+            # 이렇게 하면 로컬/Streamlit Cloud 배포 모두에서 동일하게 작동하며
+            # 사용자 브라우저가 iframe 제약 없이 top-level navigation으로 새 탭을 열 수 있음.
+            import shutil
             
-            # JavaScript 문자열 리터럴 안전하게 인코딩 (백틱/역슬래시/줄바꿈 처리)
-            import json
-            html_js_string = json.dumps(html_content)
+            # 1) static 폴더 생성 (app.py와 같은 위치)
+            app_dir = os.path.dirname(os.path.abspath(__file__))
+            static_dir = os.path.join(app_dir, "static")
+            os.makedirs(static_dir, exist_ok=True)
             
-            # 버튼 HTML — 클릭 시 blob URL 생성 후 window.open()
-            button_html = f"""
-            <button id="open-script-extractor" style="
-                background-color:#FF69B4;
-                color:white;
-                padding:0.9rem 1rem;
-                border-radius:0.5rem;
-                text-align:center;
-                font-weight:bold;
-                font-size:1.05rem;
-                cursor:pointer;
-                border:none;
-                width:100%;
-                font-family:inherit;
-            ">
-                🎙️ 방송중고 대본 추출 버튼
-            </button>
-            <script>
-                (function() {{
-                    const htmlContent = {html_js_string};
-                    const btn = document.getElementById("open-script-extractor");
-                    btn.addEventListener("click", function() {{
-                        const blob = new Blob([htmlContent], {{ type: "text/html" }});
-                        const blobUrl = URL.createObjectURL(blob);
-                        const newWindow = window.open(blobUrl, "_blank");
-                        if (!newWindow) {{
-                            alert("팝업이 차단되었습니다. 브라우저의 팝업 차단을 해제해주세요.");
-                        }}
-                    }});
-                }})();
-            </script>
-            """
+            # 2) HTML 파일을 영문명으로 static 폴더에 복사 (한글 파일명 URL 인코딩 문제 회피)
+            dest_filename = "script_extractor.html"
+            dest_path = os.path.join(static_dir, dest_filename)
+            if not os.path.exists(dest_path) or \
+               os.path.getmtime(html_source) > os.path.getmtime(dest_path):
+                shutil.copy2(html_source, dest_path)
             
-            # HTML 컴포넌트로 렌더링 (iframe 안에서 실행되어 스크립트가 정상 동작)
-            import streamlit.components.v1 as components
-            components.html(button_html, height=70)
+            # 3) Streamlit static serving URL (상대경로)
+            #    Streamlit 1.18+ 부터 config 에 enableStaticServing=true 가 필요
+            static_url = f"app/static/{dest_filename}"
+            
+            # 4) st.link_button 으로 렌더링
+            #    → 내부적으로 <a href="..." target="_blank"> 로 렌더되어
+            #      iframe 제약이나 팝업 차단 없이 top-level navigation 발생
+            st.link_button(
+                "🎙️ 방송중고 대본 추출 버튼",
+                url=static_url,
+                use_container_width=True,
+                type="primary",
+            )
             
             st.caption("💡 버튼을 누르면 새 탭에서 대본 추출기가 열립니다. "
-                      "만약 열리지 않으면 브라우저의 팝업 차단을 해제해주세요.")
+                       "배포 환경에서 작동하려면 `.streamlit/config.toml` 파일에 "
+                       "`[server] enableStaticServing = true` 설정이 필요합니다.")
