@@ -1,7 +1,4 @@
 import os
-# Streamlit의 정적 파일 서빙 기능 활성화 (대본_추출기_통합.html 버튼용)
-os.environ["STREAMLIT_SERVER_ENABLE_STATIC_SERVING"] = "true"
-
 import streamlit as st
 import pandas as pd
 from pptx import Presentation
@@ -184,45 +181,27 @@ if uploaded_file is not None:
         )
             
         st.subheader("📝 4. 방송중고 대본 추출")
-        st.markdown("대본 추출은 별도 도구에서 진행합니다. 아래 버튼을 누르면 새 탭에서 추출기가 열립니다.")
+        st.markdown("대본 추출은 별도 도구에서 진행합니다. 아래 버튼을 누르면 새 창에서 추출기가 열립니다.")
         
-        # HTML 파일을 Streamlit의 static 폴더로 복사해서 /app/static/ 경로로 서빙
-        # (data URI 방식은 Chrome 보안 정책으로 차단되므로 이 방식을 사용)
-        import shutil
         html_source = "대본_추출기_통합.html"
         
         if not os.path.exists(html_source):
             st.error(f"'{html_source}' 파일을 찾을 수 없습니다. app.py와 같은 폴더에 두세요.")
         else:
-            try:
-                # Streamlit 공식 static serving: 프로젝트 루트의 static/ 폴더를 /app/static/ 로 서빙
-                static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
-                os.makedirs(static_dir, exist_ok=True)
-                
-                dest_filename = "script_extractor.html"  # 영문 파일명 (URL 인코딩 문제 회피)
-                dest_path = os.path.join(static_dir, dest_filename)
-                
-                # 원본이 더 최신이거나 대상 파일이 없으면 복사
-                if not os.path.exists(dest_path) or \
-                   os.path.getmtime(html_source) > os.path.getmtime(dest_path):
-                    shutil.copy2(html_source, dest_path)
-                
-                # Streamlit 공식 static URL 경로
-                static_url = f"app/static/{dest_filename}"
-                
-                st.markdown(
-                    f'''
-                    <a href="{static_url}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
-                        <div style="background-color:#FF69B4;color:white;padding:0.9rem 1rem;
-                                    border-radius:0.5rem;text-align:center;font-weight:bold;
-                                    font-size:1.05rem;cursor:pointer;width:100%;">
-                            🎙️ 방송중고 대본 추출 버튼
-                        </div>
-                    </a>
-                    ''',
-                    unsafe_allow_html=True
-                )
-                st.caption("💡 버튼을 누르면 새 탭에서 대본 추출기가 열립니다. "
-                          "만약 열리지 않으면 브라우저의 팝업 차단을 해제해주세요.")
-            except Exception as e:
-                st.error(f"대본 추출기 버튼 생성 중 오류가 발생했습니다: {e}")
+            # 로컬 파일을 브라우저에서 직접 열기 위해 webbrowser 모듈 사용
+            # (Streamlit의 static serving이나 data URI는 Chrome 보안 정책에 걸리므로 우회)
+            import webbrowser
+            abs_path = os.path.abspath(html_source)
+            
+            if st.button("🎙️ 방송중고 대본 추출 버튼", 
+                         use_container_width=True, 
+                         type="primary"):
+                try:
+                    # file:// URL로 기본 브라우저에서 새 탭 열기
+                    file_url = f"file:///{abs_path.replace(os.sep, '/')}"
+                    webbrowser.open_new_tab(file_url)
+                    st.success(f"✅ 대본 추출기를 새 탭에서 열었습니다!")
+                    st.caption(f"열린 파일: `{abs_path}`")
+                except Exception as e:
+                    st.error(f"파일을 여는 중 오류 발생: {e}")
+                    st.info(f"수동으로 이 파일을 브라우저에서 여세요:\n`{abs_path}`")
