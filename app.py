@@ -188,37 +188,11 @@ if uploaded_file is not None:
         if not os.path.exists(html_source):
             st.error(f"'{html_source}' 파일을 찾을 수 없습니다. app.py와 같은 폴더에 두세요.")
         else:
-            # Streamlit 공식 static serving을 이용해서 HTML 파일을 /app/static/ 경로로 노출
-            # 이렇게 하면 로컬/Streamlit Cloud 배포 모두에서 동일하게 작동하며
-            # 사용자 브라우저가 iframe 제약 없이 top-level navigation으로 새 탭을 열 수 있음.
-            import shutil
+            with st.expander("🎙️ 대본 추출기 엽니다 (클릭하여 열기/접기)", expanded=True):
+                with open(html_source, "r", encoding="utf-8") as f:
+                    html_content = f.read()
+                
+                # HTML 파일 내용을 현재 화면(iframe)에 직접 렌더링
+                st.components.v1.html(html_content, height=800, scrolling=True)
             
-            # 1) static 폴더 생성 (app.py와 같은 위치)
-            app_dir = os.path.dirname(os.path.abspath(__file__))
-            static_dir = os.path.join(app_dir, "static")
-            os.makedirs(static_dir, exist_ok=True)
-            
-            # 2) HTML 파일을 영문명으로 static 폴더에 복사 (한글 파일명 URL 인코딩 문제 회피)
-            dest_filename = "script_extractor.html"
-            dest_path = os.path.join(static_dir, dest_filename)
-            if not os.path.exists(dest_path) or \
-               os.path.getmtime(html_source) > os.path.getmtime(dest_path):
-                shutil.copy2(html_source, dest_path)
-            
-            # 3) Streamlit static serving URL (상대경로)
-            #    Streamlit 1.18+ 부터 config 에 enableStaticServing=true 가 필요
-            static_url = f"app/static/{dest_filename}"
-            
-            # 4) st.link_button 으로 렌더링
-            #    → 내부적으로 <a href="..." target="_blank"> 로 렌더되어
-            #      iframe 제약이나 팝업 차단 없이 top-level navigation 발생
-            st.link_button(
-                "🎙️ 방송중고 대본 추출 버튼",
-                url=static_url,
-                use_container_width=True,
-                type="primary",
-            )
-            
-            st.caption("💡 버튼을 누르면 새 탭에서 대본 추출기가 열립니다. "
-                       "배포 환경에서 작동하려면 `.streamlit/config.toml` 파일에 "
-                       "`[server] enableStaticServing = true` 설정이 필요합니다.")
+            st.caption("💡 위 추출기를 통해 결과물 PPTX 파일을 올려주시면 성우 대본/프롬프트 대본을 뽑을 수 있습니다.")
