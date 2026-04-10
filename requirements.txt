@@ -3,3 +3,4 @@ python-pptx
 openai
 pandas
 python-dotenv
+PyMuPDF

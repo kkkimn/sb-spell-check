@@ -1,0 +1,20 @@
+cmd 실행 
+
+d:
+
+cd D:\테스트\2026 맞춤법 테스트
+
+python -m streamlit run app.py
+
+엔터
+
+-> 웹 실행 됨
+
+
+영상 https://kkkimn-video-spell-check-app-video-b2vahc.streamlit.app/
+보드 https://kkkimn-sb-spell-check-app-k6j3vp.streamlit.app/
+
+---------------------------------------------------------------
+실행방법 수정함. (26.04.09)
+1. 작업시작하기.bat 실행( 파이썬이 설치되어 있어야함)
+

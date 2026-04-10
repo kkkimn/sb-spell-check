@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대본 추출기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://unpkg.com/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', 'Malgun Gothic', sans-serif; }
+        .word-document {
+            background-color: white;
+            padding: 2cm;
+            width: 21cm;
+            min-height: 20cm;
+            margin: auto;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+        }
+        @media print { body, .word-document { margin: 0; box-shadow: none; } }
+    </style>
+</head>
+<body class="bg-slate-100 py-12">
+<div class="container mx-auto p-4">
+
+    <!-- 업로드 섹션 -->
+    <div id="input-section" class="bg-white rounded-2xl shadow-2xl p-8 max-w-3xl mx-auto mb-8">
+        <h1 class="text-3xl font-bold text-slate-800 mb-2 text-center">대본 추출기</h1>
+        <p class="text-slate-500 mb-6 text-center">
+            PPTX 파일을 업로드하면<br>
+            <strong class="text-green-600">성우 대본 (워드)</strong>과
+            <strong class="text-orange-500">프롬프트 대본 (PPTX)</strong>을 각각 추출합니다.
+        </p>
+
+        <div id="upload-area" class="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center cursor-pointer hover:bg-slate-50 hover:border-purple-500 transition-all duration-300">
+            <input type="file" id="ppt-file-input" class="hidden" accept=".pptx">
+            <svg class="mx-auto h-12 w-12 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <p id="upload-text" class="mt-4 text-sm text-slate-600">
+                <span class="font-semibold text-purple-600">파일을 선택</span>하거나 여기에 드래그 앤 드롭 하세요.
+            </p>
+            <p id="file-name" class="text-purple-700 font-semibold mt-3 text-sm"></p>
+        </div>
+
+        <!-- 시작 슬라이드 옵션 -->
+        <div class="mt-5 p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <label class="block text-sm font-semibold text-slate-700 mb-2">
+                📌 시작 슬라이드 번호
+                <span class="font-normal text-slate-400 ml-1">(이 번호 미만은 표지·목차로 간주하여 제외)</span>
+            </label>
+            <div class="flex items-center gap-3">
+                <input type="number" id="start-slide" value="4" min="1" max="30"
+                    class="w-20 border border-slate-300 rounded-lg px-3 py-2 text-center font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-400">
+                <span class="text-sm text-slate-500">번 슬라이드부터 추출</span>
+            </div>
+        </div>
+
+        <!-- 추출 버튼 2개 -->
+        <div class="grid grid-cols-2 gap-4 mt-5">
+            <button id="btn-seongwoo"
+                class="bg-green-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-200 transition-all disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                disabled>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                성우 대본 추출
+            </button>
+            <button id="btn-prompt"
+                class="bg-orange-500 text-white font-bold py-3 px-4 rounded-xl hover:bg-orange-600 focus:outline-none focus:ring-4 focus:ring-orange-200 transition-all disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                disabled>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"/>
+                </svg>
+                프롬프트 대본 추출
+            </button>
+        </div>
+    </div>
+
+    <!-- 로딩 -->
+    <div id="loading" class="hidden text-center mt-8">
+        <svg class="animate-spin h-8 w-8 text-purple-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p id="loading-text" class="mt-2 text-slate-600">파일 분석 중...</p>
+    </div>
+
+    <!-- 성우 대본 결과 (입력 영역 아래에 항상 표시) -->
+    <div id="seongwoo-result" class="hidden mt-2">
+        <div class="max-w-3xl mx-auto flex justify-between items-center mb-4">
+            <div>
+                <h2 class="text-xl font-bold text-slate-800">✅ 성우 대본</h2>
+                <p id="seongwoo-count" class="text-sm text-slate-500 mt-1"></p>
+            </div>
+            <div class="flex gap-3">
+                <button id="seongwoo-clear-btn" class="bg-slate-400 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-500 transition-all text-sm">
+                    결과 닫기
+                </button>
+                <button id="seongwoo-download-btn" class="bg-green-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-green-700 transition-all">
+                    워드 파일 다운로드
+                </button>
+            </div>
+        </div>
+        <div id="word-output" class="word-document"></div>
+    </div>
+
+</div>
+
+<!-- 알림 모달 -->
+<div id="alert-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-xl bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100">
+                <svg class="h-6 w-6 text-yellow-600" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mt-4">알림</h3>
+            <p class="text-sm text-gray-500 mt-2 px-4 whitespace-pre-line" id="alert-message"></p>
+            <div class="mt-4 pb-2">
+                <button id="alert-ok-btn" class="px-4 py-2 bg-purple-600 text-white font-medium rounded-lg w-full hover:bg-purple-700">확인</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── DOM ──────────────────────────────────────────────────────────────────────
+const uploadArea       = document.getElementById('upload-area');
+const fileInput        = document.getElementById('ppt-file-input');
+const fileNameDisp     = document.getElementById('file-name');
+const uploadText       = document.getElementById('upload-text');
+const startSlideInput  = document.getElementById('start-slide');
+const btnSeongwoo      = document.getElementById('btn-seongwoo');
+const btnPrompt        = document.getElementById('btn-prompt');
+const loadingDiv       = document.getElementById('loading');
+const loadingText      = document.getElementById('loading-text');
+const seongwooResult   = document.getElementById('seongwoo-result');
+const seongwooCount    = document.getElementById('seongwoo-count');
+const wordOutput       = document.getElementById('word-output');
+const seongwooDownBtn  = document.getElementById('seongwoo-download-btn');
+const seongwooClearBtn = document.getElementById('seongwoo-clear-btn');
+const alertModal       = document.getElementById('alert-modal');
+const alertMsg         = document.getElementById('alert-message');
+const alertOkBtn       = document.getElementById('alert-ok-btn');
+
+let currentFileName = '';
+
+// ── 이벤트 ───────────────────────────────────────────────────────────────────
+uploadArea.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', handleFileSelect);
+btnSeongwoo.addEventListener('click', () => runExtract('seongwoo'));
+btnPrompt.addEventListener('click',   () => runExtract('prompt'));
+seongwooDownBtn.addEventListener('click', downloadWord);
+// "결과 닫기" 버튼: 결과 영역만 숨김 (입력 영역은 그대로)
+seongwooClearBtn.addEventListener('click', () => seongwooResult.classList.add('hidden'));
+alertOkBtn.addEventListener('click', () => alertModal.classList.add('hidden'));
+
+['dragover','dragleave','drop'].forEach(e => uploadArea.addEventListener(e, stopEv));
+uploadArea.addEventListener('dragover',  () => uploadArea.classList.add('border-purple-500','bg-slate-50'));
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('border-purple-500','bg-slate-50'));
+uploadArea.addEventListener('drop', e => {
+    uploadArea.classList.remove('border-purple-500','bg-slate-50');
+    fileInput.files = e.dataTransfer.files;
+    handleFileSelect();
+});
+function stopEv(e) { e.preventDefault(); e.stopPropagation(); }
+
+function handleFileSelect() {
+    const file = fileInput.files[0];
+    if (!file) return;
+    currentFileName = file.name.replace(/\.[^/.]+$/, '');
+    fileNameDisp.textContent = `선택된 파일: ${file.name}`;
+    uploadText.classList.add('hidden');
+    btnSeongwoo.disabled = false;
+    btnPrompt.disabled   = false;
+    // 새 파일 선택 시 이전 성우 결과 초기화
+    seongwooResult.classList.add('hidden');
+}
+
+function showAlert(msg) { alertMsg.textContent = msg; alertModal.classList.remove('hidden'); }
+
+// ── 추출 진입점 ──────────────────────────────────────────────────────────────
+async function runExtract(mode) {
+    const file = fileInput.files[0];
+    if (!file) { showAlert('먼저 PPTX 파일을 선택해주세요.'); return; }
+
+    const startSlide = parseInt(startSlideInput.value, 10) || 4;
+
+    // 버튼 비활성화 + 로딩 표시 (입력 영역은 숨기지 않음)
+    btnSeongwoo.disabled = true;
+    btnPrompt.disabled   = true;
+    loadingText.textContent = mode === 'seongwoo' ? '성우 대본 추출 중...' : '프롬프트 대본 생성 중...';
+    loadingDiv.classList.remove('hidden');
+
+    try {
+        const { seongwoo, prompt } = await extractAll(file, startSlide);
+
+        if (mode === 'seongwoo') {
+            if (seongwoo.length === 0) {
+                showAlert("'성우' 역할의 대본을 찾을 수 없습니다.\n표에 '성우', '성우(남)', '성우(여)' 텍스트가 있는지 확인해주세요.");
+                return;
+            }
+            buildWordPreview(seongwoo);
+            seongwooCount.textContent = `총 ${seongwoo.length}개 항목 추출됨`;
+            seongwooResult.classList.remove('hidden');
+            // 결과 위치로 부드럽게 스크롤
+            seongwooResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            if (prompt.length === 0) {
+                showAlert("대본을 찾을 수 없습니다.\n시작 슬라이드 번호를 확인해주세요.");
+                return;
+            }
+            buildPromptPptx(prompt);
+            // 프롬프트는 파일 다운로드만 → 완료 알림
+            showAlert(`프롬프트 대본 PPTX 파일이 다운로드되었습니다.\n(${prompt.length}개 항목)`);
+        }
+    } catch (err) {
+        console.error(err);
+        showAlert('파일 분석 중 오류가 발생했습니다.\n파일이 손상되었거나 지원하지 않는 형식일 수 있습니다.');
+    } finally {
+        loadingDiv.classList.add('hidden');
+        btnSeongwoo.disabled = false;
+        btnPrompt.disabled   = false;
+    }
+}
+
+// ── PPTX 전체 파싱 ───────────────────────────────────────────────────────────
+async function extractAll(file, startSlide) {
+    const zip = await JSZip.loadAsync(file);
+    const slideEntries = [];
+    zip.forEach((path, entry) => {
+        const m = path.match(/ppt\/slides\/slide(\d+)\.xml/);
+        if (m) slideEntries.push({ number: parseInt(m[1], 10), entry });
+    });
+    slideEntries.sort((a, b) => a.number - b.number);
+
+    // 공통 패턴
+    const seongwooKw = ['성우', '성우(남)', '성우(여)', '여성우'];
+    const headerKw   = ['역할', '내용', '파일번호'];
+    const timeRe     = /^\d{2}:\d{2}~\d{2}:\d{2}$/;
+    // 구분번호 패턴: 01_01_01 / NA_01_01_01 / NA_01_01 / #1 / 1-1-1 등
+    const sceneRe    = /^(NA_\d{2}_\d{2}(?:_\d{2})?|\d{2}_\d{2}_\d{2}|\d{2}_\d{2}|#\d+|\d{1,2}[-._]\d{1,2}(?:[-._][a-zA-Z0-9]+)?)$/i;
+    // #숫자 또는 #숫자-숫자(-숫자) 패턴 제거 (g 플래그 재사용을 위해 함수로)
+    const cleanHashPattern = /#\d+(-\d+)*/g;
+
+    const seongwooList = [];
+    const promptList   = [];
+    const parser = new DOMParser();
+
+    // XML 미리 로드 + 표 유무 판단
+    const slideXmls = [];
+    let hasTableInFile = false;
+    for (const s of slideEntries) {
+        const xml = await s.entry.async('string');
+        slideXmls.push({ number: s.number, xml });
+        if (xml.includes('<a:tbl')) hasTableInFile = true;
+    }
+
+    for (const { number: snum, xml } of slideXmls) {
+        if (snum < startSlide) continue;
+        const doc = parser.parseFromString(xml, 'application/xml');
+
+        if (hasTableInFile) {
+            // ── 방식A: 표 기반 파싱 ─────────────────────────────────────
+            for (const table of doc.getElementsByTagName('a:tbl')) {
+                const rows = table.getElementsByTagName('a:tr');
+                for (const row of rows) {
+                    const cells = Array.from(row.getElementsByTagName('a:tc'))
+                                       .map(c => c.textContent.trim());
+
+                    const speakerCell = cells.find(t =>
+                        t && t.length < 20 && !headerKw.includes(t)
+                        && !timeRe.test(t) && !sceneRe.test(t) && isNaN(t)
+                    );
+                    if (!speakerCell || headerKw.includes(speakerCell)) continue;
+
+                    const isSeongwoo = seongwooKw.includes(speakerCell);
+                    const sceneCell  = cells.find(t => sceneRe.test(t));
+
+                    let script = '';
+                    for (const t of cells) {
+                        if (!t || t === speakerCell) continue;
+                        if (headerKw.includes(t) || timeRe.test(t) || sceneRe.test(t)) continue;
+                        if (t.length > script.length) script = t;
+                    }
+
+                    const cleaned = cleanScript(script);
+                    // 실질적인 내레이션이 없는 경우 제외
+                    if (!hasNarration(cleaned)) continue;
+
+                    const entry = {
+                        slideNumber: snum,
+                        scene:  sceneCell || `슬라이드 ${snum}`,
+                        script: cleaned,
+                        speaker: speakerCell
+                    };
+                    if (isSeongwoo) {
+                        seongwooList.push(entry);
+                    } else {
+                        promptList.push(entry);
+                    }
+                }
+            }
+        } else {
+            // ── 방식B: 텍스트박스 기반 파싱 ─────────────────────────────
+            const allParas = [];
+            for (const para of doc.getElementsByTagName('a:p')) {
+                const t = Array.from(para.getElementsByTagName('a:t'))
+                               .map(el => el.textContent).join('').trim();
+                if (t) allParas.push(t);
+            }
+
+            const sceneCell = allParas.find(t => sceneRe.test(t.trim()));
+            const scriptLines = allParas.filter(t =>
+                !sceneRe.test(t.trim()) && !/^\[끝\]$/.test(t.trim())
+            );
+
+            const cleaned = cleanScript(scriptLines.join(' '));
+            // 실질적인 내레이션이 없는 경우 제외
+            if (!hasNarration(cleaned)) continue;
+
+            promptList.push({
+                slideNumber: snum,
+                scene:  sceneCell ? sceneCell.trim() : `슬라이드 ${snum}`,
+                script: cleaned,
+                speaker: ''
+            });
+        }
+    }
+
+    return { seongwoo: seongwooList, prompt: promptList };
+}
+
+// ── 대본 클린업 ──────────────────────────────────────────────────────────────
+// #1, #1-2, #3-1-2 등 해시태그 번호 모두 제거 + 앞 NA_XX_XX 제거
+function cleanScript(text) {
+    return text
+        .replace(/^(NA_[\d_]+\s*)/i, '')
+        .replace(/#\d+(-\d+)*/g, '')
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+}
+
+// ── 실질적인 내레이션 여부 판별 ───────────────────────────────────────────────
+// 아래 경우는 내레이션 없음으로 간주하여 제외:
+//  · 비어 있거나 공백만 있는 경우
+//  · '-', '없음', 'N/A', '(없음)' 같은 빈 표시어
+//  · 15자 미만인 경우 (의미 있는 문장으로 보기 어려움)
+//  · 어절(단어) 수가 3개 미만인 경우
+const EMPTY_PLACEHOLDERS = /^[-–—·•\s]*$|^없음$|^n\/a$|^\(없음\)$|^na$|^\.$|^\.{2,}$/i;
+
+function hasNarration(text) {
+    if (!text) return false;
+    if (EMPTY_PLACEHOLDERS.test(text)) return false;
+    if (text.length < 15) return false;
+    if (text.split(/\s+/).filter(Boolean).length < 3) return false;
+    return true;
+}
+
+// ── 성우 워드 미리보기 ────────────────────────────────────────────────────────
+function buildWordPreview(list) {
+    const rows = list.map(item => `
+        <tr>
+            <td style="border:1px solid #ddd;text-align:center;padding:8px 10px;white-space:nowrap;">${escHtml(item.scene)}</td>
+            <td style="border:1px solid #ddd;text-align:center;padding:8px 10px;">성우</td>
+            <td style="border:1px solid #ddd;padding:8px 12px;line-height:1.9;">${escHtml(item.script)}</td>
+        </tr>`).join('');
+
+    const today   = new Date();
+    const dateStr = `${today.getFullYear()}. ${pad(today.getMonth()+1)}. ${pad(today.getDate())}.`;
+
+    wordOutput.innerHTML = `
+        <h2 style="text-align:center;font-size:22px;font-weight:bold;margin-bottom:36px;">
+            ${escHtml(currentFileName)} - 성우 음성 대본
+        </h2>
+        <p style="text-align:right;margin-bottom:16px;font-size:10pt;color:#555;">작성일자: ${dateStr}</p>
+        <hr style="margin-bottom:28px;">
+        <table style="width:100%;border-collapse:collapse;font-size:11pt;">
+            <thead>
+                <tr style="background:#f2f2f2;">
+                    <th style="border:1px solid #ddd;text-align:center;padding:8px 10px;width:22%;">파일번호</th>
+                    <th style="border:1px solid #ddd;text-align:center;padding:8px 10px;width:13%;">역할</th>
+                    <th style="border:1px solid #ddd;text-align:center;padding:8px 10px;">내용</th>
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>`;
+}
+
+// ── 성우 워드 다운로드 ────────────────────────────────────────────────────────
+function downloadWord() {
+    const header = `<html xmlns:o='urn:schemas-microsoft-com:office:office'
+        xmlns:w='urn:schemas-microsoft-com:office:word'
+        xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'>
+        <style>@page{size:A4;margin:2.5cm}body{font-family:'Malgun Gothic',sans-serif;}</style>
+        </head><body>`;
+    const blob = new Blob([header + wordOutput.innerHTML + '</body></html>'],
+                          { type: 'application/vnd.ms-word;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `${currentFileName || '성우_대본'}_음성대본.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+}
+
+// ── 프롬프트 PPTX 생성 ────────────────────────────────────────────────────────
+// · 슬라이드 961×721px (4:3 표준) / 44pt / 씬 그룹 끝에만 [끝] 표시
+function buildPromptPptx(list) {
+    const pptx = new PptxGenJS();
+
+    // 961×721 픽셀 → 인치 변환 (96dpi 기준)
+    // 961/96 ≈ 10.01" , 721/96 ≈ 7.51"
+    pptx.defineLayout({ name: 'LAYOUT_961x721', width: 10.01, height: 7.51 });
+    pptx.layout = 'LAYOUT_961x721';
+
+    // ── 설정값 ──────────────────────────────────────────────────────────────
+    const FONT_SIZE     = 44;   // pt
+    const SCENE_SIZE    = 30;   // 씬번호 폰트
+    const LINE_SPACE    = 64;   // pt 행간
+    const CPL           = 17;   // 한 줄 최대 글자 수 (44pt × 9.6" 기준)
+    const MAX_LINES     = 6;    // 씬번호 없는 페이지
+    const MAX_LINES_HDR = 4;    // 씬번호 있는 첫 페이지 (헤더 2줄 차지)
+
+    // 텍스트박스: 슬라이드 전체 활용 (좌우 0.2" 여백만)
+    const BOX = { x: 0.2, y: 0.15, w: 9.61, h: 7.21 };
+
+    // ── 씬 단위로 그룹화 (등장 순서 유지) ───────────────────────────────────
+    const sceneOrder = [];
+    const sceneMap   = new Map();
+    for (const item of list) {
+        if (!sceneMap.has(item.scene)) {
+            sceneMap.set(item.scene, []);
+            sceneOrder.push(item.scene);
+        }
+        sceneMap.get(item.scene).push(item.script);
+    }
+
+    let lastSceneShown = '';
+
+    for (const scene of sceneOrder) {
+        const scripts    = sceneMap.get(scene);
+        const fullText   = scripts.join(' ');
+        const showHeader = scene !== lastSceneShown;  // 씬번호 바뀔 때만 헤더 표시
+
+        // 페이지 분할
+        let allPages;
+        if (showHeader) {
+            const first = splitChunk(fullText, CPL, MAX_LINES_HDR);
+            const rest  = first.rest ? splitToPages(first.rest, CPL, MAX_LINES) : [];
+            allPages    = [first.text, ...rest].filter(p => p && p.trim());
+            lastSceneShown = scene;
+        } else {
+            allPages = splitToPages(fullText, CPL, MAX_LINES).filter(p => p && p.trim());
+            if (!allPages.length && fullText.trim()) allPages = [fullText.trim()];
+        }
+
+        allPages.forEach((pageText, idx) => {
+            const isLast = idx === allPages.length - 1;
+            const slide  = pptx.addSlide();
+            slide.background = { color: '000000' };
+
+            const textObjs = [];
+
+            // 씬번호: 이 씬에서 첫 페이지이고 이전 씬과 다를 때만 표시
+            if (idx === 0 && showHeader) {
+                textObjs.push({
+                    text: scene + '\n\n',
+                    options: { color: 'FFFFFF', bold: false, fontSize: SCENE_SIZE }
+                });
+            }
+
+            // 본문 (노란 글씨)
+            textObjs.push({
+                text: pageText,
+                options: { color: 'FFFF00' }
+            });
+
+            // [끝]: 씬 그룹의 마지막 페이지에만 표시
+            if (isLast) {
+                textObjs.push({
+                    text: '\n\n[끝]',
+                    options: { color: 'FFFFFF', bold: false, fontSize: SCENE_SIZE }
+                });
+            }
+
+            slide.addText(textObjs, {
+                x: BOX.x, y: BOX.y, w: BOX.w, h: BOX.h,
+                align: 'left',
+                valign: 'top',
+                fontSize: FONT_SIZE,
+                bold: true,
+                fontFace: 'Malgun Gothic',
+                lineSpacing: LINE_SPACE
+            });
+        });
+    }
+
+    pptx.writeFile({ fileName: `${currentFileName || '프롬프트'}_촬영대본.pptx` });
+}
+
+// ── 텍스트 분할 ──────────────────────────────────────────────────────────────
+function splitChunk(text, cpl, maxLines) {
+    const words = text.split(/\s+/).filter(Boolean);
+    let lines = [], cur = '';
+    for (let i = 0; i < words.length; i++) {
+        const w = words[i];
+        const test = cur ? cur + ' ' + w : w;
+        if (test.length > cpl && cur.length > 0) {
+            lines.push(cur);
+            if (lines.length >= maxLines) {
+                return { text: lines.join('\n'), rest: words.slice(i).join(' ') };
+            }
+            cur = w;
+        } else {
+            cur = test;
+        }
+    }
+    if (cur) lines.push(cur);
+    return { text: lines.join('\n'), rest: '' };
+}
+
+function splitToPages(text, cpl, maxLines) {
+    const words = text.split(/\s+/).filter(Boolean);
+    const pages = [];
+    let lines = [], cur = '';
+    for (const w of words) {
+        const test = cur ? cur + ' ' + w : w;
+        if (test.length > cpl && cur.length > 0) {
+            lines.push(cur);
+            if (lines.length >= maxLines) {
+                pages.push(lines.join('\n'));
+                lines = [];
+            }
+            cur = w;
+        } else {
+            cur = test;
+        }
+    }
+    if (cur) lines.push(cur);
+    if (lines.length > 0) pages.push(lines.join('\n'));
+    return pages;
+}
+
+// ── 유틸 ─────────────────────────────────────────────────────────────────────
+function pad(n) { return String(n).padStart(2, '0'); }
+function escHtml(s) {
+    return String(s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>

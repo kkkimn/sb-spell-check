@@ -1,0 +1,144 @@
+--- Slide 2 Text 0 ---
+
+--- Slide 2 Text 1 ---
+
+--- Slide 2 Text 2 ---
+
+--- Slide 2 Text 3 ---
+
+--- Slide 2 Text 4 ---
+
+--- Slide 2 Text 5 ---
+
+--- Slide 2 Text 7 ---
+공종별 설계도면 개요 분석하기
+--- Slide 2 Text 8 ---
+01_01
+--- Slide 3 Text 0 ---
+
+--- Slide 3 Text 1 ---
+
+--- Slide 3 Text 2 ---
+
+--- Slide 3 Text 3 ---
+
+--- Slide 3 Text 4 ---
+
+--- Slide 3 Text 5 ---
+
+--- Slide 3 Text 6 ---
+고인룡 교수
+--- Slide 3 Text 8 ---
+01_02
+--- Slide 4 Text 0 ---
+#1  네임텍 제시 후 5초 뒤 제거
+--- Slide 4 Text 1 ---
+# 초연결사회 구현을 위한 네트워크 설계도면 작성하기_1회차(크로마키)01_01_01(250819)(00:00~00:14)
+--- Slide 4 Text 2 ---
+교수: #1 여러분이 보고 계시는 도 면은 #2 국가재ㅈ난안전통신망(PS-LTE) 통신설비 계통도로 #3 재난안전통신망을 위해 LTE 기술을 기반으로 구축된 무선 통신망 입니다.
+--- Slide 4 Text 3 ---
+
+--- Slide 4 Text 4 ---
+
+--- Slide 4 Text 5 ---
+
+--- Slide 4 Text 7 ---
+고인룡 교수
+--- Slide 4 Text 8 ---
+국가재난안전통신망(PS-LTE) 통신설비 계통도
+--- Slide 4 Text 9 ---
+#1
+--- Slide 4 Text 10 ---
+#0
+--- Slide 4 Text 11 ---
+#2
+--- Slide 4 Text 12 ---
+재난안전통신망을 위해 LTE 기술을 기반으로 구축된무선 통신망
+--- Slide 4 Text 13 ---
+#3
+--- Slide 4 Text 14 ---
+출처 : 과학기술정보통신부 긴급복구 계통도 도면
+--- Slide 4 Text 15 ---
+01_03
+--- Slide 5 Text 0 ---
+
+--- Slide 5 Text 1 ---
+
+--- Slide 5 Text 2 ---
+
+--- Slide 5 Text 3 ---
+# 초연결사회 구현을 위한 네트워크 설계도면 작성하기_1회차(크로마키)01_01_01(250819)(00:15~00:36)
+--- Slide 5 Text 4 ---
+교수: #1 경찰, #2 소방, #3 해경 등 #4 재난 관련 기관들이 재난 발생 시 효과적으로 대으할 수 있도록 독립적인 통신 환경을 제공합니다. #5 평시에는 긴급재난 안전 관련 훈련 및 정보 공유를 위한 용도로 사용되니다.
+--- Slide 5 Text 5 ---
+
+--- Slide 5 Text 6 ---
+
+--- Slide 5 Text 7 ---
+
+--- Slide 5 Text 8 ---
+국가재난안전통신망(PS-LTE) 통신설비 계통도
+--- Slide 5 Text 9 ---
+재난 관련 기관들이 재난 발생 시 효과적으로 대응할 수 있도록 독립 적인 통신 환경 재공
+--- Slide 5 Text 12 ---
+평시에는 긴급긴재난 안전 관련 훈련 및 정보 공유를 위한 용도
+--- Slide 5 Text 13 ---
+
+--- Slide 5 Text 15 ---
+#1
+--- Slide 5 Text 16 ---
+#2
+--- Slide 5 Text 17 ---
+#3
+--- Slide 5 Text 18 ---
+#4
+--- Slide 5 Text 19 ---
+#5
+--- Slide 5 Text 20 ---
+https://www.flaticon.com/free-icon/police_4010995?term=police&related_id=4010995  https://www.flaticon.com/free-icon/firetruck_2820482?term=firefighter+truck&related_id=2820482   https://www.flaticon.
+--- Slide 5 Text 21 ---
+01_04
+--- Slide 6 Text 0 ---
+#1,#2 글씨 강조 없이 제시 #3 ‘설계도면’ 글씨 바탕색 추가 및 이미지 제시 #4 ‘준공도면’ 글씨 바탕색 추가 및 이미지 제시
+--- Slide 6 Text 1 ---
+# 초연결사회 구현을 위한 네트워크 설계도면 작성하기_1회차(크로마키)01_01_01(250819)(00:37~01:18)
+--- Slide 6 Text 2 ---
+교수: #1 우리가 통신을 하는 통신망과 통신시스템을 구축할 때 설계도면이 왜 중요할까요?  또 #2 재난안전통신망 고장 시 긴급복구를 할 때 준공도면이 왜 중요할까요? 이러한 의문이 생기는 것이죠. #3 설계도면은 #4 통신망이나 통신시스템을 구축하기 위한 것이고 #5 준공도면은 #6 통신망을 유지 보수하기 위한 필수적인 중요 안내서이지요. 시공자는 설계
+--- Slide 6 Text 3 ---
+
+--- Slide 6 Text 4 ---
+
+--- Slide 6 Text 5 ---
+
+--- Slide 6 Text 6 ---
+통신망과 통신시스템을 구축할 때 설계도면이 왜 중요할까?
+--- Slide 6 Text 7 ---
+재난안전통신망 고장 시 긴급복구를 할 때 준공 도면이 왜 중요할까?
+--- Slide 6 Text 10 ---
+#1
+--- Slide 6 Text 11 ---
+#2
+--- Slide 6 Text 12 ---
+#3
+--- Slide 6 Text 13 ---
+#3
+--- Slide 6 Text 14 ---
+#5
+--- Slide 6 Text 15 ---
+#5
+--- Slide 6 Text 16 ---
+https://www.flaticon.com/free-icon/blueprint_1623990?term=blueprint&related_id=1623990   https://www.flaticon.com/free-icon/blueprint_1624005?term=blueprint+drawing&related_id=1624005
+--- Slide 6 Text 17 ---
+
+--- Slide 6 Text 18 ---
+통신망이나 통신시스템을구축하기 위해한 것
+--- Slide 6 Text 19 ---
+
+--- Slide 6 Text 20 ---
+통신망을 유지 보수하기 위한필수적인 중요 안내서
+--- Slide 6 Text 21 ---
+#4
+--- Slide 6 Text 22 ---
+#6
+--- Slide 6 Text 23 ---
+01_05

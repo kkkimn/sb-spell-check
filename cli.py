@@ -10,17 +10,24 @@ load_dotenv()
 API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 def process_file_cli(input_path, is_paid_tier=True):
-    print(f"\n[{input_path}] OpenAI GPT-4o-mini AI 스캐닝(슬라이드별) 교정을 시작합니다...")
+    print(f"\n[{input_path}] OpenAI GPT-4o-mini AI 스캐닝(문서별) 교정을 시작합니다...")
     if is_paid_tier:
         print("  ▶ [유료 요금제 모드] API 딜레이 대기 없이 최고 속도로 스캔합니다.")
     if not os.path.exists(input_path):
         print(f"에러: {input_path} 파일이 없습니다.")
         return
         
-    prs = Presentation(input_path)
+    is_pdf = input_path.lower().endswith(".pdf")
     base_name = os.path.splitext(input_path)[0]
     out_script = f"{base_name}_대본(통합).txt"
-    out_pptx = f"{base_name}_통합교정완료.pptx"
+    
+    if is_pdf:
+        import fitz
+        doc_obj = fitz.open(input_path)
+        out_file = f"{base_name}_통합교정완료.pdf"
+    else:
+        doc_obj = Presentation(input_path)
+        out_file = f"{base_name}_통합교정완료.pptx"
     
     # 1. 안내 메시지 (대본 추출은 최종 병합 후 수행)
     print(f" - PPT 내부 텍스트 스캔 및 슬라이드별 AI 맞춤법 교정안 도출 중...")
@@ -40,27 +47,54 @@ def process_file_cli(input_path, is_paid_tier=True):
             print(f"   > [맞춤법사전.txt] 파일에서 {len(custom_dict_list)}개의 예외 단어를 불러왔습니다.")
     
     def on_progress(current, total):
-        print(f"   > 슬라이드 스캔 현황: {current}/{total} 장 완료...")
+        print(f"   > 페이지/슬라이드 스캔 현황: {current}/{total} 장 완료...")
         
-    corrections_dict = core.get_openai_corrections_by_slide(
-        prs, 
-        API_KEY, 
-        is_paid_tier=is_paid_tier,
-        custom_dict=custom_dict_list,
-        progress_callback=on_progress
-    )
+    if is_pdf:
+        corrections_dict = core.get_openai_corrections_by_page_pdf(
+            doc_obj, 
+            API_KEY, 
+            is_paid_tier=is_paid_tier,
+            custom_dict=custom_dict_list,
+            progress_callback=on_progress
+        )
+    else:
+        corrections_dict = core.get_openai_corrections_by_slide(
+            doc_obj, 
+            API_KEY, 
+            is_paid_tier=is_paid_tier,
+            custom_dict=custom_dict_list,
+            progress_callback=on_progress
+        )
     
     print(f"\n   [AI 분석 결과] 총 {len(corrections_dict)}개의 문장이 교정 대상으로 식별되었습니다.")
     for k, v in corrections_dict.items():
         print(f"     - [수정 전]: {k}\n     - [수정 후]: {v}\n")
         
-    # 3. PPT에 핫핑크 서식 덧씌우기 (내부에 텍스트 교정 적용)
-    print(f"\n - PPT에 핫핑크색 교정 서식 반영 중...")
-    core.apply_corrections_to_ppt(prs, corrections_dict)
+    # 3. 문서에 서식 덧씌우기
+    print(f"\n - 문서에 교정 서식/코멘트 마커 반영 중...")
+    if is_pdf:
+        core.apply_corrections_to_pdf(doc_obj, corrections_dict)
+    else:
+        core.apply_corrections_to_ppt(doc_obj, corrections_dict)
     
-    # 4. 교정된 상태의 PPT에서 최종 대본 추출 및 저장
+    # 4. 교정된 대본 추출 및 저장
     print(f" - 교정이 반영된 최종 대본 분리 저장 중...")
-    corrected_narrations = core.extract_narrations(prs)
+    
+    if is_pdf:
+        raw_narrations = core.extract_narrations_pdf(doc_obj)
+        corrected_narrations = {}
+        for speaker, lines in raw_narrations.items():
+            new_lines = []
+            for line in lines:
+                new_line = line
+                for old_txt, new_txt in corrections_dict.items():
+                    if old_txt in new_line:
+                        new_line = new_line.replace(old_txt, new_txt)
+                new_lines.append(new_line)
+            corrected_narrations[speaker] = new_lines
+    else:
+        corrected_narrations = core.extract_narrations(doc_obj)
+        
     for speaker, lines in corrected_narrations.items():
         if lines:
             speaker_script_path = f"{base_name}_대본({speaker}).txt"
@@ -69,13 +103,15 @@ def process_file_cli(input_path, is_paid_tier=True):
                 f.write(speaker_text)
             print(f"   > [대본 저장 완료] {speaker_script_path}")
             
-    prs.save(out_pptx)
-    print(f"\n완료! AI 교정된 파일이 저장되었습니다: {out_pptx}\n")
+    doc_obj.save(out_file)
+    if is_pdf:
+        doc_obj.close()
+    print(f"\n완료! AI 교정된 파일이 저장되었습니다: {out_file}\n")
 
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("사용법: python cli.py [PPTX 파일경로]")
+        print("사용법: python cli.py [PPTX/PDF 파일경로]")
         print("예시: python cli.py \"한기대 보드.pptx\"")
         print("안내: 현재 유료 API 계정 모드가 기본값으로 적용되어 최고 속도로 동작합니다.")
     else:
