@@ -147,9 +147,9 @@ if uploaded_file is not None:
             st.dataframe(df, use_container_width=True, hide_index=True)
             
             if is_pdf:
-                st.warning("위 변경 사항들은 완성본 다운로드 시 '핫핑크색 형광펜 (메모 코멘트)' 형태로 PDF에 표시됩니다.")
+                st.warning("위 변경 사항들은 완성본 다운로드 시 '파란색 형광펜 (메모 코멘트)' 형태로 PDF에 표시됩니다.")
             else:
-                st.warning("위 변경 사항들은 완성본 다운로드 시 '핫핑크색' 서식으로 PPT에 일괄 덮어씌워집니다. "
+                st.warning("위 변경 사항들은 완성본 다운로드 시 '파란색' 서식으로 PPT에 일괄 덮어씌워집니다. "
                            "(부분 굵게/색상 등 일부 인라인 서식은 초기화될 수 있습니다.)")
             
         st.subheader("📥 3. 완성본 다운로드")
@@ -161,13 +161,13 @@ if uploaded_file is not None:
                 doc_obj.save(out_stream)
                 doc_obj.close()
                 mime_type = "application/pdf"
-                btn_label = "💖 교정 하이라이트 PDF 다운로드"
+                btn_label = "💙 교정 하이라이트 PDF 다운로드"
                 file_ext = "pdf"
             else:
                 core.apply_corrections_to_ppt(doc_obj, st.session_state.corrections)
                 doc_obj.save(out_stream)
                 mime_type = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-                btn_label = "💖 핑크색 교정 반영본 PPTX 다운로드"
+                btn_label = "💙 파란색 교정 반영본 PPTX 다운로드"
                 file_ext = "pptx"
                 
             out_stream.seek(0)

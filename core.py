@@ -1023,7 +1023,7 @@ def _apply_to_paragraph(paragraph, corrections_dict):
                 except: pass
                 
         if tag in ('replace', 'insert'):
-            new_run.font.color.rgb = RGBColor(255, 105, 180)
+            new_run.font.color.rgb = RGBColor(0, 0, 255)
         else:
             if font_ref and hasattr(font_ref, 'color') and hasattr(font_ref.color, 'rgb') and font_ref.color.rgb:
                 try: new_run.font.color.rgb = font_ref.color.rgb
@@ -1165,7 +1165,7 @@ def apply_corrections_to_pdf(pdf_document, corrections_dict):
             text_instances = page.search_for(old_txt, quads=True)
             for inst in text_instances:
                 highlight = page.add_highlight_annot(inst)
-                highlight.set_colors(stroke=(1.0, 0.41, 0.70))
+                highlight.set_colors(stroke=(0.0, 0.0, 1.0))
                 
                 info = highlight.info
                 info["title"] = "AI 맞춤법 교정"
