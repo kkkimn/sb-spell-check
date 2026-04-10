@@ -181,27 +181,59 @@ if uploaded_file is not None:
         )
             
         st.subheader("📝 4. 방송중고 대본 추출")
-        st.markdown("대본 추출은 별도 도구에서 진행합니다. 아래 버튼을 누르면 새 창에서 추출기가 열립니다.")
+        st.markdown("대본 추출은 별도 도구에서 진행합니다. 아래 버튼을 누르면 새 탭에서 추출기가 열립니다.")
         
         html_source = "대본_추출기_통합.html"
         
         if not os.path.exists(html_source):
             st.error(f"'{html_source}' 파일을 찾을 수 없습니다. app.py와 같은 폴더에 두세요.")
         else:
-            # 로컬 파일을 브라우저에서 직접 열기 위해 webbrowser 모듈 사용
-            # (Streamlit의 static serving이나 data URI는 Chrome 보안 정책에 걸리므로 우회)
-            import webbrowser
-            abs_path = os.path.abspath(html_source)
+            # HTML 파일 내용을 읽어서 JavaScript blob URL로 새 탭에 오픈
+            # 이 방식은 로컬/배포(Streamlit Cloud, GitHub 등) 환경 모두에서 동일하게 작동함
+            # (사용자 브라우저 측에서 직접 blob을 생성해 새 탭을 열기 때문)
+            with open(html_source, "r", encoding="utf-8") as f:
+                html_content = f.read()
             
-            if st.button("🎙️ 방송중고 대본 추출 버튼", 
-                         use_container_width=True, 
-                         type="primary"):
-                try:
-                    # file:// URL로 기본 브라우저에서 새 탭 열기
-                    file_url = f"file:///{abs_path.replace(os.sep, '/')}"
-                    webbrowser.open_new_tab(file_url)
-                    st.success(f"✅ 대본 추출기를 새 탭에서 열었습니다!")
-                    st.caption(f"열린 파일: `{abs_path}`")
-                except Exception as e:
-                    st.error(f"파일을 여는 중 오류 발생: {e}")
-                    st.info(f"수동으로 이 파일을 브라우저에서 여세요:\n`{abs_path}`")
+            # JavaScript 문자열 리터럴 안전하게 인코딩 (백틱/역슬래시/줄바꿈 처리)
+            import json
+            html_js_string = json.dumps(html_content)
+            
+            # 버튼 HTML — 클릭 시 blob URL 생성 후 window.open()
+            button_html = f"""
+            <button id="open-script-extractor" style="
+                background-color:#FF69B4;
+                color:white;
+                padding:0.9rem 1rem;
+                border-radius:0.5rem;
+                text-align:center;
+                font-weight:bold;
+                font-size:1.05rem;
+                cursor:pointer;
+                border:none;
+                width:100%;
+                font-family:inherit;
+            ">
+                🎙️ 방송중고 대본 추출 버튼
+            </button>
+            <script>
+                (function() {{
+                    const htmlContent = {html_js_string};
+                    const btn = document.getElementById("open-script-extractor");
+                    btn.addEventListener("click", function() {{
+                        const blob = new Blob([htmlContent], {{ type: "text/html" }});
+                        const blobUrl = URL.createObjectURL(blob);
+                        const newWindow = window.open(blobUrl, "_blank");
+                        if (!newWindow) {{
+                            alert("팝업이 차단되었습니다. 브라우저의 팝업 차단을 해제해주세요.");
+                        }}
+                    }});
+                }})();
+            </script>
+            """
+            
+            # HTML 컴포넌트로 렌더링 (iframe 안에서 실행되어 스크립트가 정상 동작)
+            import streamlit.components.v1 as components
+            components.html(button_html, height=70)
+            
+            st.caption("💡 버튼을 누르면 새 탭에서 대본 추출기가 열립니다. "
+                      "만약 열리지 않으면 브라우저의 팝업 차단을 해제해주세요.")
